@@ -1,32 +1,36 @@
 import logging
 import argparse
 import sys
+import psycopg2
 
 # Set the log output file, and the log level
 logging.basicConfig(filename="snippets.log", level=logging.DEBUG)
+logging.debug("Connecting to PostgreSQL")
+connection = psycopg2.connect("dbname='snippets' user='action' host='localhost'")
+logging.debug("Database connection established.")
 
 
 
 def put(name, snippet):
-    """
-    Store a snippet with an associated name.
-
-    Returns the name and the snippet
-    """
-    logging.error("FIXME: Unimplemented - put({!r}, {!r})".format(name, snippet))
+    logging.info("Storing snippet {!r}: {!r}".format(name, snippet))
+    cursor = connection.cursor()
+    command = "insert into snippets values (%s, %s)"
+    cursor.execute(command, (name, snippet))
+    connection.commit()
+    logging.debug("Snippet stored successfully.")
     return name, snippet
+    
 
 
 
 def get(name):
-    """Retrieve the snippet with a given name.
-
-    If there is no such snippet ask user for snippet name again like that while loop in the fizzbuz project
-
-    Returns the snippet.
-    """
-    logging.error("FIXME: Unimplemented - get({!r})".format(name))
-    return ""
+    logging.info("Retrieving snippet {!r}".format(name))
+    cursor = connection.cursor()
+    command = "select message from snippets where keyword=(%s);"
+    cursor.execute("select message from snippets where keyword=(%s)", (name,))
+    row = cursor.fetchone()
+    
+    return name
 
 def main():
     """Main function"""
@@ -41,9 +45,10 @@ def main():
     put_parser.add_argument("name", help="The name of the snippet")
     put_parser.add_argument("snippet", help="The snippet text")
     
+    logging.debug("Constructing get subparser")
     get_parser = subparsers.add_parser("get", help="Retrieve a snippet")
     get_parser.add_argument("name", help="The name of the snippet")
-
+    
     arguments = parser.parse_args(sys.argv[1:])
     
     arguments = vars(arguments)
