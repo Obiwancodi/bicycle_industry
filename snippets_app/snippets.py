@@ -26,11 +26,14 @@ def put(name, snippet):
 def get(name):
     logging.info("Retrieving snippet {!r}".format(name))
     cursor = connection.cursor()
-    command = "select message from snippets where keyword=(%s);"
     cursor.execute("select message from snippets where keyword=(%s)", (name,))
     row = cursor.fetchone()
+    connection.commit()
+    if row:
+        return row[0]
+    else:
+        print "Sorry that snippet does not exist."
     
-    return name
 
 def main():
     """Main function"""
