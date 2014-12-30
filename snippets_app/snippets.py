@@ -14,8 +14,7 @@ logging.debug("Database connection established.")
 def put(name, snippet):
     logging.info("Storing snippet {!r}: {!r}".format(name, snippet))
     cursor = connection.cursor()
-    with connection,connection.cursor() as cursor:
-        
+    with connection,connection.cursor() as cursor: 
         try:
             cursor.execute( "insert into snippets values (%s, %s)", (name, snippet))
         except psycopg2.IntegrityError as e:
@@ -25,8 +24,24 @@ def put(name, snippet):
     logging.debug("Snippet stored successfully.")
     return name, snippet
     
-
-
+def catalog():
+    logging.info("Retrieving keywords")
+    cursor = connection.cursor()
+    cursor.execute( "select * from snippets order by keyword", )
+    keys = cursor.fetchall()
+    connection.commit()
+    print keys
+    
+      
+def search(word):
+    logging.info("Searching for word in snippet")
+    cursor = connection.cursor()
+    command = "select * from snippets where message like %s"
+    sure = ['%' + word +'%']
+    cursor.execute(command, sure,)
+    words = cursor.fetchall()
+    connection.commit()
+    print words
 
 def get(name):
     logging.info("Retrieving snippet {!r}".format(name))
@@ -56,6 +71,13 @@ def main():
     get_parser = subparsers.add_parser("get", help="Retrieve a snippet")
     get_parser.add_argument("name", help="The name of the snippet")
     
+    logging.debug("Constructing catalog subparser")
+    catalog_parser = subparsers.add_parser("catalog", help="Shows keywords")
+    
+    logging.debug("Constructing search subparser")
+    search_parser = subparsers.add_parser("search", help="Find a word in a snippet")
+    search_parser.add_argument("word", help="The word in the snippet")
+    
     arguments = parser.parse_args(sys.argv[1:])
     
     arguments = vars(arguments)
@@ -63,7 +85,16 @@ def main():
 
     if command == "put":
         name, snippet = put(**arguments)
-        print("Stored {!r} as {!r}".format(snippet, name))
+        print("Stored {!r} as {!r}".format(snippet, name)) 
+        
+    elif command == "catalog":
+        it = catalog()
+        return it
+    
+    elif command == "search":
+        word = search(**arguments)
+        print ("Retrieved snippets")
+        
     elif command == "get":
         snippet = get(**arguments)
         print("Retrieved snippet: {!r}".format(snippet))
